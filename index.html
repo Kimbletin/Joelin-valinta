@@ -9,63 +9,70 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #1a202c; /* Tumma tausta */
+            background-color: #1a202c; /* Dark background */
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            overflow: hidden; /* Estä vierityspalkit, jos painike menee reunan yli */
+            overflow: hidden; /* Prevent scrollbars if button moves off screen */
         }
         .game-container {
-            background-color: #2d3748; /* Tummempi harmaa */
-            border-radius: 1rem; /* Pyöristetyt kulmat */
-            padding: 2.5rem; /* Reilu täyte */
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.5); /* Varjo */
+            background-color: #2d3748; /* Darker gray */
+            border-radius: 1rem; /* Rounded corners */
+            padding: 2.5rem; /* Generous padding */
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.5); /* Shadow */
             text-align: center;
             position: relative;
-            width: 90%; /* Mobiiliystävällinen leveys */
-            max-width: 500px; /* Maksimileveys työpöydällä */
-            border: 2px solid #4a5568; /* Ohut reuna */
-            z-index: 1; /* Varmista, että säiliö on välähdyksen päällä */
+            width: 90%; /* Mobile-friendly width */
+            max-width: 500px; /* Max width for desktop */
+            border: 2px solid #4a5568; /* Thin border */
+            z-index: 1; /* Ensure container is above flash */
         }
         .game-title {
-            color: #e2e8f0; /* Vaalea teksti */
-            font-size: 2.5rem; /* Suuri otsikko */
+            color: #e2e8f0; /* Light text */
+            font-size: 2.5rem; /* Large title */
             font-weight: bold;
             margin-bottom: 2rem;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* Tekstivarjo */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* Text shadow */
+        }
+        .level-display {
+            color: #e2e8f0;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
         }
         .button-container {
             display: flex;
-            flex-direction: column; /* Painikkeet pystysuunnassa */
-            gap: 1.5rem; /* Painikkeiden väli */
+            flex-direction: column; /* Buttons in a column */
+            gap: 1.5rem; /* Space between buttons */
         }
         .game-button {
-            background: linear-gradient(145deg, #4299e1, #3182ce); /* Sininen liukuväri */
+            background: linear-gradient(145deg, #4299e1, #3182ce); /* Blue gradient */
             color: white;
             padding: 1rem 2rem;
-            border-radius: 0.75rem; /* Pyöristetyt kulmat */
+            border-radius: 0.75rem; /* Rounded corners */
             font-size: 1.25rem;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.3s ease; /* Pehmeät siirtymät */
+            transition: all 0.3s ease; /* Smooth transitions */
             border: none;
             outline: none;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); /* Painikkeen varjo */
-            position: relative; /* Tarvitaan pakenevalle painikkeelle */
-            overflow: hidden; /* Estää tekstin leikkaantumisen */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); /* Button shadow */
+            position: relative; /* Needed for running button */
+            overflow: hidden; /* Prevent text clipping */
         }
         .game-button:hover {
-            transform: translateY(-3px); /* Hieman ylöspäin hiiren ollessa päällä */
+            transform: translateY(-3px); /* Slightly up on hover */
             box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
         }
         .game-button:active {
-            transform: translateY(0); /* Painettu tila */
+            transform: translateY(0); /* Pressed state */
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
         .running-button {
-            transition: all 0.1s ease-out; /* Nopeampi siirtymä pakenevalle painikkeelle */
+            transition: all 0.1s ease-out; /* Faster transition for running button */
         }
         .message-box {
             position: absolute;
@@ -80,7 +87,7 @@
             color: #e2e8f0;
             font-size: 1.2rem;
             z-index: 1000;
-            display: none; /* Piilotettu aluksi */
+            display: none; /* Hidden by default */
             flex-direction: column;
             align-items: center;
             gap: 1rem;
@@ -102,107 +109,194 @@
             background-color: #3182ce;
         }
 
-        /* Punainen välähdys -peittokuva */
+        /* Red flash overlay */
         .red-flash-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            background-color: rgba(255, 0, 0, 0.3); /* Punainen, läpinäkyvä tausta */
-            opacity: 0; /* Aluksi piilotettu */
-            z-index: 999; /* Viestilaatikon alla, mutta pelisäiliön päällä */
-            pointer-events: none; /* Estä klikkaukset välähdyksen läpi */
-            transition: opacity 0.1s ease-out; /* Lyhyt siirtymä */
+            background-color: rgba(255, 0, 0, 0.3); /* Red, transparent background */
+            opacity: 0; /* Hidden by default */
+            z-index: 999; /* Below message box, above game container */
+            pointer-events: none; /* Allow clicks through flash */
+            transition: opacity 0.1s ease-out; /* Short transition */
         }
         .red-flash-overlay.active {
-            opacity: 1; /* Näytä välähdys */
+            opacity: 1; /* Show flash */
+        }
+
+        /* Confetti styles */
+        .confetti {
+            position: fixed;
+            top: -10px; /* Start slightly above the screen */
+            width: 8px;
+            height: 8px;
+            background-color: #f00; /* Default color, changes in JS */
+            border-radius: 50%;
+            opacity: 0;
+            animation: fallAndFade 2s forwards ease-out; /* Animation */
+            z-index: 2000; /* Confetti on top of everything */
+        }
+
+        @keyframes fallAndFade {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg); /* Fall down and rotate */
+                opacity: 0;
+            }
+        }
+
+        /* XP message styles */
+        .xp-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(66, 153, 225, 0.9); /* Blue, transparent background */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            opacity: 0;
+            animation: fadeInOut 2s forwards ease-out; /* Animation */
+            z-index: 1500; /* XP message below confetti, but above other elements */
+            pointer-events: none; /* Allow clicks through message */
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            20% { opacity: 1; transform: translate(-50%, -60%) scale(1); } /* Move slightly up */
+            80% { opacity: 1; transform: translate(-50%, -60%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -80%) scale(0.8); } /* Fade out upwards */
         }
     </style>
 </head>
 <body>
     <div class="game-container">
         <h1 class="game-title">CALL OF DUTY: THE MENU</h1>
+        <p class="level-display">Taso: <span id="currentLevel">0</span></p> <!-- Level display -->
         <div class="button-container">
             <button id="stakeoutButton" class="game-button">STAKEOUT 24/7</button>
             <button id="otherModesButton" class="game-button running-button">MUUT PELIMUODOT</button>
         </div>
     </div>
 
-    <!-- Viestilaatikko -->
+    <!-- Message box -->
     <div id="messageBox" class="message-box">
         <p id="messageText"></p>
         <button id="closeMessageButton">OK</button>
     </div>
 
-    <!-- Punainen välähdys -peittokuva -->
+    <!-- Red flash overlay -->
     <div id="redFlashOverlay" class="red-flash-overlay"></div>
 
     <script>
-        // Hae elementit DOMista
+        // Get DOM elements
         const stakeoutButton = document.getElementById('stakeoutButton');
         const otherModesButton = document.getElementById('otherModesButton');
         const gameContainer = document.querySelector('.game-container');
         const messageBox = document.getElementById('messageBox');
         const messageText = document.getElementById('messageText');
         const closeMessageButton = document.getElementById('closeMessageButton');
-        const redFlashOverlay = document.getElementById('redFlashOverlay'); // Uusi välähdys-elementti
+        const redFlashOverlay = document.getElementById('redFlashOverlay');
+        const currentLevelSpan = document.getElementById('currentLevel'); // Get level display element
 
-        // Funktion näyttää viestilaatikon
+        let currentLevel = 0; // Initialize level counter
+
+        // Function to show the message box
         function showMessageBox(message) {
             messageText.textContent = message;
             messageBox.style.display = 'flex';
         }
 
-        // Funktion väläyttää näyttöä punaisena
+        // Function to flash the screen red
         function flashRed() {
-            redFlashOverlay.classList.add('active'); // Lisää aktiivinen luokka
+            redFlashOverlay.classList.add('active');
             setTimeout(() => {
-                redFlashOverlay.classList.remove('active'); // Poista luokka lyhyen ajan kuluttua
-            }, 200); // Välähdyksen kesto millisekunneissa (0.2 sekuntia)
+                redFlashOverlay.classList.remove('active');
+            }, 200); // Flash duration in milliseconds (0.2 seconds)
         }
 
-        // Piilota viestilaatikko
+        // Create and drop confetti
+        function createConfetti() {
+            const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722'];
+            const numConfetti = 50; // Number of confetti pieces
+
+            for (let i = 0; i < numConfetti; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.left = `${Math.random() * 100}vw`; // Random horizontal position
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)]; // Random color
+                confetti.style.animationDelay = `${Math.random() * 0.5}s`; // Random delay
+                document.body.appendChild(confetti);
+
+                // Remove confetti from DOM after animation ends
+                confetti.addEventListener('animationend', () => {
+                    confetti.remove();
+                });
+            }
+        }
+
+        // Show XP message
+        function showXpMessage(amount) {
+            const xpMessage = document.createElement('div');
+            xpMessage.classList.add('xp-message');
+            xpMessage.textContent = `+${amount} XP`;
+            document.body.appendChild(xpMessage);
+
+            // Remove XP message from DOM after animation ends
+            xpMessage.addEventListener('animationend', () => {
+                xpMessage.remove();
+            });
+        }
+
+        // Hide message box
         closeMessageButton.addEventListener('click', () => {
             messageBox.style.display = 'none';
         });
 
-        // Tapahtumankuuntelija "stakeout 24/7" -painikkeelle
+        // Event listener for "stakeout 24/7" button
         stakeoutButton.addEventListener('click', () => {
             showMessageBox('Valitsit "STAKEOUT 24/7"! Valmistaudu toimintaan!');
-            // Tähän voisi lisätä logiikkaa siirtyä seuraavaan pelinäkymään
+            createConfetti(); // Call confetti function
+            showXpMessage(100); // Show XP message (e.g., 100 XP)
+
+            // Update level counter
+            currentLevel += 10; // 10 levels per click (100 clicks = 1000 levels)
+            currentLevelSpan.textContent = currentLevel; // Update displayed level
+
+            // Add logic to transition to the next game screen here
         });
 
-        // Tapahtumankuuntelija "muut pelimuodot" -painikkeelle
+        // Event listener for "other modes" button
         otherModesButton.addEventListener('mouseover', () => {
-            // Hae säiliön mitat
             const containerRect = gameContainer.getBoundingClientRect();
             const buttonRect = otherModesButton.getBoundingClientRect();
 
-            // Laske sallitut liikkumisalueet
-            // Varmista, että painike pysyy säiliön sisällä
-            const maxX = containerRect.width - buttonRect.width - 20; // 20px marginaali
-            const maxY = containerRect.height - buttonRect.height - 20; // 20px marginaali
+            const maxX = containerRect.width - buttonRect.width - 20;
+            const maxY = containerRect.height - buttonRect.height - 20;
 
-            // Generoi uudet satunnaiset sijainnit
-            // Käytä positiivisia ja negatiivisia arvoja, jotta painike voi liikkua kaikkiin suuntiin
-            // Suhteuta liike säiliön kokoon
             const newX = Math.random() * maxX - maxX / 2;
             const newY = Math.random() * maxY - maxY / 2;
 
-            // Aseta painikkeen uusi sijainti CSS transformin avulla
             otherModesButton.style.transform = `translate(${newX}px, ${newY}px)`;
         });
 
-        // Estä "muut pelimuodot" -painikkeen napsauttaminen
+        // Prevent "other modes" button from being clicked
         otherModesButton.addEventListener('click', (event) => {
-            event.stopPropagation(); // Estä tapahtuman leviämisen
-            event.preventDefault(); // Estä oletustoiminto
-            showMessageBox('Olisko kuitenkin stakeout?'); // Uusi viesti
-            flashRed(); // Kutsu välähdysfunktiota
+            event.stopPropagation();
+            event.preventDefault();
+            showMessageBox('Olisko kuitenkin stakeout?');
+            flashRed();
         });
 
-        // Palauta painike alkuperäiseen sijaintiin, jos hiiri poistuu siitä
+        // Reset button position if mouse leaves it
         otherModesButton.addEventListener('mouseout', () => {
             otherModesButton.style.transform = `translate(0, 0)`;
         });
